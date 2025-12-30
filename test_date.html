@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Date Test</title>
+</head>
+<body>
+    <h1>Date Test</h1>
+    <script>
+        console.log('Current Date Object:', new Date());
+        console.log('ISO String:', new Date().toISOString());
+        console.log('ISO Split:', new Date().toISOString().split('T')[0]);
+        console.log('Locale Date String:', new Date().toLocaleDateString());
+        
+        // Also display on page
+        document.body.innerHTML += '<p>Current Date Object: ' + new Date() + '</p>';
+        document.body.innerHTML += '<p>ISO String: ' + new Date().toISOString() + '</p>';
+        document.body.innerHTML += '<p>ISO Split (currentDate): ' + new Date().toISOString().split('T')[0] + '</p>';
+        document.body.innerHTML += '<p>Locale Date String: ' + new Date().toLocaleDateString() + '</p>';
+    </script>
+</body>
+</html> 

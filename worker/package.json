@@ -1,0 +1,29 @@
+{
+    "name": "anubis-worker",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "scripts": {
+        "start": "node dist/index.js",
+        "dev": "ts-node src/index.ts",
+        "build": "tsc"
+    },
+    "dependencies": {
+        "@bull-board/api": "^5.10.0",
+        "@bull-board/express": "^5.10.0",
+        "axios": "^1.13.2",
+        "bullmq": "^5.0.0",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2",
+        "ioredis": "^5.3.0",
+        "playwright": "^1.49.1",
+        "playwright-extra": "^4.3.6",
+        "puppeteer-extra-plugin-stealth": "^2.11.2",
+        "winston": "^3.11.0"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@types/node": "^20.10.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.2"
+    }
+}

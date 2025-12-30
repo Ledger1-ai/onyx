@@ -1,0 +1,12 @@
+# Ignore browser_profiles
+browser_profiles/
+
+# Ignore chrome_profiles
+chrome_profiles/
+
+# Ignore image_archive
+image_archive/
+
+# Ignore image_archive
+image_archive/
+

@@ -1,0 +1,230 @@
+@import "tailwindcss";
+
+:root {
+  /* Default Theme (can be overridden by dark mode) */
+  --background: #0a0a0f;
+  --foreground: #00ffff;
+
+  /* Anubis Cyberpunk Palette */
+  --cyber-primary: #00ffff;
+  --cyber-secondary: #ff00ff;
+  --cyber-accent: #ffff00;
+  --cyber-warning: #ff6600;
+  --cyber-danger: #ff0066;
+  --cyber-success: #00ff66;
+  --cyber-bg-primary: #0a0a0f;
+  --cyber-bg-secondary: #1a0a1a;
+  --cyber-bg-tertiary: #0f1419;
+  --cyber-glass-bg: rgba(0, 15, 25, 0.3);
+  --cyber-glass-border: rgba(0, 255, 255, 0.3);
+  --cyber-glass-glow: 0 0 30px rgba(0, 255, 255, 0.1);
+  --cyber-text-primary: #00ffff;
+  --cyber-text-secondary: #88ccff;
+  --cyber-text-muted: #4488cc;
+  --cyber-grid-glow: rgba(0, 255, 255, 0.1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Extend theme with cyber colors */
+  --color-cyber-primary: var(--cyber-primary);
+  --color-cyber-secondary: var(--cyber-secondary);
+  --color-cyber-accent: var(--cyber-accent);
+  --color-cyber-warning: var(--cyber-warning);
+  --color-cyber-danger: var(--cyber-danger);
+  --color-cyber-success: var(--cyber-success);
+  --color-cyber-bg-primary: var(--cyber-bg-primary);
+  --color-cyber-bg-secondary: var(--cyber-bg-secondary);
+  --color-cyber-bg-tertiary: var(--cyber-bg-tertiary);
+
+  /* Animations */
+  --animate-fade-in-up: fadeInUp 0.8s ease-out forwards;
+  --animate-gradient-x: gradientX 3s ease infinite;
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes gradientX {
+
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0f;
+    --foreground: #00ffff;
+  }
+}
+
+body {
+  background: radial-gradient(ellipse at center, #0f1419 0%, #0a0a0f 70%, #000000 100%);
+  color: var(--foreground);
+  font-family: var(--font-rajdhani), sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Cyberpunk Grid Background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 1;
+  animation: gridShift 20s linear infinite;
+}
+
+@keyframes gridShift {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(50px, 50px);
+  }
+}
+
+/* Glass Panel Utilities */
+.glass-panel {
+  background: var(--cyber-glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--cyber-glass-border);
+  box-shadow: var(--cyber-glass-glow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyber-primary), transparent);
+  animation: scanLine 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes scanLine {
+
+  0%,
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  50% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Utility classes for text gradients */
+.text-cyber-gradient {
+  background: linear-gradient(90deg, var(--cyber-primary), var(--cyber-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Custom Scrollbar - Sleek & Themed */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(55, 65, 81, 0.5);
+  /* gray-700/50 */
+  border-radius: 9999px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cyber-primary);
+  box-shadow: 0 0 8px var(--cyber-glass-glow);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Afterlife Mode (Red/Glitch Theme - Subtle Version) */
+.afterlife-active .glass-panel {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.15), inset 0 0 10px rgba(220, 38, 38, 0.05) !important;
+}
+
+.afterlife-active .glass-panel::before {
+  background: linear-gradient(90deg, transparent, #ef4444, transparent);
+}
+
+/* Optional: Slight tint for the header to match */
+.afterlife-active header {
+  border-bottom-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Glitch Animation Keyframes (Kept for the switch itself) */
+@keyframes glitch-skew {
+  0% {
+    transform: skew(0deg);
+  }
+
+  20% {
+    transform: skew(-2deg);
+  }
+
+  40% {
+    transform: skew(2deg);
+  }
+
+  60% {
+    transform: skew(-1deg);
+  }
+
+  80% {
+    transform: skew(1deg);
+  }
+
+  100% {
+    transform: skew(0deg);
+  }
+}
+
+.afterlife-active .glitch-effect {
+  animation: glitch-skew 1s infinite linear alternate-reverse;
+}

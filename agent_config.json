@@ -1,0 +1,73 @@
+{
+    "target_accounts": [
+        "elonmusk",
+        "OpenAI", 
+        "sama",
+        "ylecun",
+        "karpathy",
+        "naval",
+        "balajis",
+        "VitalikButerin",
+        "pmarca",
+        "a16z"
+    ],
+    "search_keywords": [
+        "AI automation",
+        "decentralized technology",
+        "community innovation", 
+        "future of work",
+        "blockchain adoption",
+        "digital transformation",
+        "ethical AI",
+        "sustainable tech",
+        "human potential",
+        "democratic access"
+    ],
+    "content_topics": [
+        "AI and automation in society",
+        "Philosophy of technology", 
+        "Economic implications of decentralization",
+        "Community-driven innovation",
+        "Future of work and human potential",
+        "Ethical considerations in tech",
+        "Sustainable development through technology",
+        "Democratic access to advanced tools",
+        "Tokenization and shared ownership",
+        "Industrial automation as a service",
+        "Breaking down technological barriers",
+        "Empowering local communities with tech"
+    ],
+    "reply_styles": [
+        "insightful_sage",
+        "curious_questioner", 
+        "supportive_community",
+        "philosophical_thinker",
+        "practical_advisor"
+    ],
+    "limits": {
+        "replies_per_session": 5,
+        "trending_interactions_per_session": 10,
+        "quote_tweets_per_session": 3,
+        "content_posts_per_day": 3,
+        "max_tweet_length": 280,
+        "max_quote_commentary_length": 200
+    },
+    "delays": {
+        "between_replies": [30, 90],
+        "between_trending_interactions": [45, 120], 
+        "between_quote_tweets": [300, 600],
+        "between_functions": [300, 900],
+        "cycle_interval_hours": 4
+    },
+    "filters": {
+        "min_tweet_length": 30,
+        "avoid_spam_keywords": ["crypto", "pump", "moon", "lambo", "hodl"],
+        "keywords_of_interest": ["AI", "automation", "technology", "future", "innovation", "community", "decentralized"]
+    },
+    "performance_thresholds": {
+        "min_replies_per_week": 10,
+        "min_trending_interactions_per_week": 20,
+        "min_quote_tweets_per_week": 5,
+        "min_content_posts_per_week": 10
+    }
+} 

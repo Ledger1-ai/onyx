@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANUBIS - AI Agent Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ timestamp }}">
+</head>
+
+<body class="min-h-screen bg-gray-900 font-sans radix compact">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700">
+        <div class="w-full px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div
+                        class="w-25 h-25 glass-icon-container glass-icon-blue rounded-lg flex items-center justify-center">
+                        <img src="{{ url_for('static', filename='anubislogo.png') }}" alt="Anubis"
+                            class="w-25 h-25 object-contain header-logo" />
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">ANUBIS</h1>
+                        <p class="text-sm text-gray-400">Autonomous Social Intelligence Platform</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="px-4 py-2 bg-gray-700 rounded">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-white">ACTIVE</span>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        <i class="fas fa-satellite-dish mr-2"></i>
+                        <span id="last-update-time">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="w-full px-4 py-4">
+        <div class="command-scroll nice-scroll-x">
+            <!-- Column 1: Mission Schedule (dedicated) -->
+            <section class="command-column col-schedule">
+                <div class="bg-gray-800 glass-panel rounded-lg p-4 card-fill widget widget-fluid">
+                    <div class="schedule-controls sticky top-0 z-10 bg-gray-800 p-2 rounded">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-lg font-bold text-white">Mission Schedule <span id="schedule-date"
+                                    class="text-sm text-gray-400 ml-2"></span></h3>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button id="prev-day" class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded"
+                                    title="Previous Day">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <input id="schedule-date-picker" type="date"
+                                    class="bg-gray-700 text-white rounded px-2 py-1" />
+                                <button id="today-btn"
+                                    class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded"
+                                    title="Today">Today</button>
+                                <button id="next-day" class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded"
+                                    title="Next Day">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <div class="relative">
+                                    <button id="range-toggle"
+                                        class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-sm"
+                                        title="Range">Range ▾</button>
+                                    <div id="range-panel" class="schedule-range-panel hidden">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <span class="text-xs text-gray-400">Start</span>
+                                            <input id="range-start" type="date"
+                                                class="bg-gray-700 text-white rounded px-2 py-1" />
+                                            <span class="text-xs text-gray-400">End</span>
+                                            <input id="range-end" type="date"
+                                                class="bg-gray-700 text-white rounded px-2 py-1" />
+                                        </div>
+                                        <div class="flex justify-end space-x-2">
+                                            <button id="range-cancel"
+                                                class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-sm">Cancel</button>
+                                            <button id="load-range-btn"
+                                                class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-sm">Load</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body-scroll nice-scroll">
+                        <div id="schedule-timeline" class="space-y-2">
+                            <!-- Schedule items will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Column 2: Controls + Status + Task Frequency -->
+            <section class="command-column col-controls">
+                <!-- Command Center Controls -->
+                <div class="bg-gray-800 glass-panel rounded-lg panel-compact mb-3 widget widget-fixed">
+                    <h2 class="text-lg font-bold text-white mb-2">Command Center</h2>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="start-agent"
+                            class="bg-green-600 hover:bg-green-700 text-white btn-compact rounded"><i
+                                class="fas fa-power-off mr-1"></i><span>Init</span></button>
+                        <button id="stop-agent" class="bg-red-600 hover:bg-red-700 text-white btn-compact rounded"><i
+                                class="fas fa-ban mr-1"></i><span>Stop</span></button>
+                        <button id="trigger-optimization"
+                            class="bg-blue-600 hover:bg-blue-700 text-white btn-compact rounded"><i
+                                class="fas fa-cogs mr-1"></i><span>Optimize</span></button>
+                        <button id="refresh-data"
+                            class="bg-gray-600 hover:bg-gray-700 text-white btn-compact rounded"><i
+                                class="fas fa-sync-alt mr-1"></i><span>Refresh</span></button>
+                        <a href="/chat"
+                            class="bg-purple-600 hover:bg-purple-700 text-white btn-compact rounded text-center"><i
+                                class="fas fa-terminal mr-1"></i><span>Chat</span></a>
+                        <button class="bg-gray-600 hover:bg-gray-700 text-white btn-compact rounded"
+                            onclick="dashboard.showSettings()"><i
+                                class="fas fa-sliders-h mr-1"></i><span>Config</span></button>
+                    </div>
+                </div>
+        </div>
+
+        <!-- Platform Status Widget -->
+        <div class="bg-gray-800 glass-panel rounded-lg panel-compact mb-3 widget widget-fixed">
+            <h2 class="text-lg font-bold text-white mb-2">Platform Status</h2>
+            <div class="space-y-2">
+                <!-- Twitter Status -->
+                <div class="flex items-center justify-between p-2 bg-gray-700/30 rounded">
+                    <div class="flex items-center space-x-2">
+                        <i class="fab fa-twitter text-blue-400"></i>
+                        <span class="text-sm text-gray-300">Twitter/X</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div id="status-twitter-indicator" class="w-2 h-2 rounded-full bg-gray-500"></div>
+                        <span id="status-twitter-text" class="text-xs text-gray-400">Unknown</span>
+                    </div>
+                </div>
+
+                <!-- LinkedIn Status -->
+                <div class="flex items-center justify-between p-2 bg-gray-700/30 rounded">
+                    <div class="flex items-center space-x-2">
+                        <i class="fab fa-linkedin text-blue-600"></i>
+                        <span class="text-sm text-gray-300">LinkedIn</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="btn-linkedin-login"
+                            class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded hidden">
+                            <i class="fas fa-key mr-1"></i>Login
+                        </button>
+                        <div id="status-linkedin-indicator" class="w-2 h-2 rounded-full bg-gray-500"></div>
+                        <span id="status-linkedin-text" class="text-xs text-gray-400">Unknown</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Overview (compact) -->
+        <div class="grid grid-cols-2 gap-3 mb-3 widget widget-fixed">
+            <div class="bg-gray-800 glass-card rounded-lg p-2 compact-stat">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="glass-icon-container glass-icon-blue rounded-lg flex items-center justify-center">
+                        <i class="fas fa-brain text-white text-sm"></i>
+                    </div>
+                </div>
+                <p class="stat-label mb-1">Active Process</p>
+                <p id="current-activity" class="stat-value mb-1">--</p>
+                <div class="glass-progress-bar">
+                    <div id="activity-progress" class="glass-progress-fill" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="bg-gray-800 glass-card rounded-lg p-2 compact-stat">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="glass-icon-container glass-icon-green rounded-lg flex items-center justify-center">
+                        <i class="fas fa-rocket text-white text-sm"></i>
+                    </div>
+                </div>
+                <p class="stat-label mb-1">Next Protocol</p>
+                <p id="next-activity" class="stat-value mb-0">--</p>
+                <p id="time-until" class="stat-label">--</p>
+            </div>
+            <div class="bg-gray-800 glass-card rounded-lg p-2 compact-stat">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="glass-icon-container glass-icon-purple rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-pie text-white text-sm"></i>
+                    </div>
+                </div>
+                <p class="stat-label mb-1">Daily Progress</p>
+                <p id="daily-progress" class="stat-value-lg mb-0">0%</p>
+                <p id="activities-completed" class="stat-label">0/0 Completed</p>
+            </div>
+            <div class="bg-gray-800 glass-card rounded-lg p-2 compact-stat">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="glass-icon-container glass-icon-yellow rounded-lg flex items-center justify-center">
+                        <i class="fas fa-trophy text-white text-sm"></i>
+                    </div>
+                </div>
+                <p class="stat-label mb-1">Efficiency Score</p>
+                <p id="performance-score" class="stat-value-lg mb-0">--</p>
+                <p id="performance-trend" class="stat-label">--</p>
+            </div>
+        </div>
+
+        <!-- Strategy Overview moved from Column 3 -->
+        <div class="bg-gray-800 glass-panel rounded-lg p-3 mb-3 widget widget-fixed">
+            <h3 class="text-lg font-bold text-white mb-2">Strategy Overview</h3>
+            <div id="strategy-info" class="space-y-2"></div>
+        </div>
+
+        <!-- Task Frequency Controls -->
+        <div class="bg-gray-800 glass-panel rounded-lg p-3 task-compact widget widget-fluid">
+            <h3 class="text-lg font-bold text-white mb-2">Task Frequency Controls</h3>
+            <div class="mb-6">
+                <h4 class="text-sm text-gray-300 mb-3">Quick Presets</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="preset-balanced"
+                        class="preset-btn preset-compact bg-gray-700 hover:bg-gray-600 rounded-lg text-xs text-white transition-all">
+                        <div class="preset-curve mb-1"><svg viewBox="0 0 40 20" class="w-full h-4">
+                                <path d="M2,15 Q10,12 18,13 Q26,14 38,12" stroke="#00ffff" stroke-width="1.5"
+                                    fill="none" />
+                            </svg></div><span>Balanced</span>
+                    </button>
+                    <button id="preset-engagement"
+                        class="preset-btn preset-compact bg-gray-700 hover:bg-gray-600 rounded-lg text-xs text-white transition-all">
+                        <div class="preset-curve mb-1"><svg viewBox="0 0 40 20" class="w-full h-4">
+                                <path d="M2,18 Q10,8 18,6 Q26,16 38,17" stroke="#00ff00" stroke-width="1.5"
+                                    fill="none" />
+                            </svg></div><span>Engagement</span>
+                    </button>
+                    <button id="preset-content"
+                        class="preset-btn preset-compact bg-gray-700 hover:bg-gray-600 rounded-lg text-xs text-white transition-all">
+                        <div class="preset-curve mb-1"><svg viewBox="0 0 40 20" class="w-full h-4">
+                                <path d="M2,16 Q10,16 18,8 Q26,4 38,15" stroke="#ff6b35" stroke-width="1.5"
+                                    fill="none" />
+                            </svg></div><span>Content</span>
+                    </button>
+                    <button id="preset-discovery"
+                        class="preset-btn preset-compact bg-gray-700 hover:bg-gray-600 rounded-lg text-xs text-white transition-all">
+                        <div class="preset-curve mb-1"><svg viewBox="0 0 40 20" class="w-full h-4">
+                                <path d="M2,12 Q10,18 18,16 Q26,6 38,4" stroke="#ff00ff" stroke-width="1.5"
+                                    fill="none" />
+                            </svg></div><span>Discovery</span>
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-4" id="task-frequency-controls">
+                <div class="space-y-3">
+                    <div class="task-slider-group">
+                        <label class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-300">Tweet</span>
+                            <span id="tweet-percentage" class="text-xs text-cyan-400">18%</span>
+                        </label>
+                        <input type="range" id="tweet-slider" class="slider w-full" min="0" max="100" value="18">
+                    </div>
+                    <div class="task-slider-group">
+                        <label class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-300">Scroll & Engage</span>
+                            <span id="scroll_engage-percentage" class="text-xs text-cyan-400">35%</span>
+                        </label>
+                        <input type="range" id="scroll_engage-slider" class="slider w-full" min="0" max="100"
+                            value="35">
+                    </div>
+                    <div class="task-slider-group">
+                        <label class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-300">Search & Engage</span>
+                            <span id="search_engage-percentage" class="text-xs text-cyan-400">15%</span>
+                        </label>
+                        <input type="range" id="search_engage-slider" class="slider w-full" min="0" max="100"
+                            value="15">
+                    </div>
+                    <div class="task-slider-group">
+                        <label class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-300">Reply</span>
+                            <span id="reply-percentage" class="text-xs text-cyan-400">18%</span>
+                        </label>
+                        <input type="range" id="reply-slider" class="slider w-full" min="0" max="100" value="18">
+                    </div>
+                    <div class="task-slider-group">
+                        <label class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-300">Content Creation</span>
+                            <span id="content_creation-percentage" class="text-xs text-cyan-400">10%</span>
+                        </label>
+                        <input type="range" id="content_creation-slider" class="slider w-full" min="0" max="100"
+                            value="10">
+                    </div>
+                    <div class="task-slider-group">
+                        <label class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-300">Thread</span>
+                            <span id="thread-percentage" class="text-xs text-cyan-400">2%</span>
+                        </label>
+                        <input type="range" id="thread-slider" class="slider w-full" min="0" max="100" value="2">
+                    </div>
+                    <div class="task-slider-group">
+                        <label class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-300">Radar Discovery</span>
+                            <span id="radar_discovery-percentage" class="text-xs text-cyan-400">2%</span>
+                        </label>
+                        <input type="range" id="radar_discovery-slider" class="slider w-full" min="0" max="100"
+                            value="2">
+                    </div>
+                </div>
+                <div class="border-t border-gray-600 pt-4 mt-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm text-gray-300">Total Distribution:</span>
+                        <span id="total-percentage" class="text-lg font-bold text-green-400">100%</span>
+                    </div>
+                    <button id="save-frequency-btn"
+                        class="w-full bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-all shimmer-effect">
+                        Save Distribution
+                    </button>
+                </div>
+            </div>
+        </div>
+        </section>
+
+        <!-- Column 3: Analytics + Logs + Auto Protocols -->
+        <section class="command-column col-analytics">
+            <div class="bg-gray-800 glass-panel rounded-lg p-3 widget widget-fluid">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-bold text-white">Analytics Matrix</h3>
+                    <div class="flex space-x-1">
+                        <button class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">7D</button>
+                        <button class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">30D</button>
+                        <button class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">90D</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 gap-2">
+                    <div class="glass-chart-container" style="height: 18vh;"><canvas id="engagement-chart"></canvas>
+                    </div>
+                    <div class="glass-chart-container" style="height: 18vh;"><canvas id="activity-chart"></canvas></div>
+                    <div class="glass-chart-container" style="height: 18vh;"><canvas
+                            id="account-impressions-chart"></canvas></div>
+                    <div class="glass-chart-container" style="height: 18vh;"><canvas
+                            id="account-engagements-chart"></canvas></div>
+                    <div class="glass-chart-container" style="height: 18vh;"><canvas
+                            id="account-followers-chart"></canvas></div>
+                    <div id="live-metrics" class="grid grid-cols-1 gap-2"></div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 glass-panel rounded-lg p-3 widget widget-fluid">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-bold text-white">Account Overview</h3>
+                    <div class="flex space-x-1">
+                        <button id="analytics-7D"
+                            class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">7D</button>
+                        <button id="analytics-30D"
+                            class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">30D</button>
+                        <button id="analytics-90D"
+                            class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">90D</button>
+                    </div>
+                </div>
+                <div id="account-overview" class="grid grid-cols-2 gap-2">
+                    <!-- Account overview metric tiles will be populated here -->
+                </div>
+            </div>
+
+            <div class="bg-gray-800 glass-panel rounded-lg p-3 widget widget-fluid">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-bold text-white">System Logs</h3>
+                    <button id="clear-logs"
+                        class="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">Clear</button>
+                </div>
+                <div class="glass-terminal p-2 nice-scroll" style="height: 18vh; overflow-y: auto;">
+                    <div id="activity-logs" class="space-y-1 text-gray-300 font-mono text-xs"
+                        style="padding: 6px 2px 2px 2px;">
+                        <!-- Logs will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategy Overview moved to Column 2 -->
+
+            <div class="bg-gray-800 glass-panel rounded-lg p-3 widget widget-fixed">
+                <h3 class="text-lg font-bold text-white mb-2">Recent Activity</h3>
+                <div id="recent-activity" class="nice-scroll" style="max-height: 18vh; overflow-y: auto;"></div>
+            </div>
+
+            <!-- Auto Protocols moved to Column 4 under chat -->
+        </section>
+
+        <!-- Column 4: Chat Interface -->
+        <section class="command-column col-chat">
+            <div class="bg-gray-800 glass-panel rounded-lg p-4 card-fill chat-panel widget widget-fluid">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-white">Command Chat</h3>
+                    <a href="/chat" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">Open
+                        Full</a>
+                </div>
+                <div class="card-body-scroll nice-scroll">
+                    <iframe src="/chat?embed=true" title="Agent Chat" class="w-full embedded-chat"
+                        style="height: 100%;"></iframe>
+                </div>
+            </div>
+
+            <!-- Auto Protocols moved below chat -->
+            <div class="bg-gray-800 glass-panel rounded-lg p-3 panel-compact auto-protocols-panel widget widget-fixed">
+                <h3 class="text-lg font-bold text-white mb-2">Auto Protocols</h3>
+                <div class="grid grid-cols-1 gap-2">
+                    <div class="bg-gray-700 glass-sub-panel rounded-lg p-3">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <label class="flex items-center"><input type="checkbox" id="enable-shoutouts" checked
+                                    class="mr-2"><span class="text-white text-xs">Follower Protocol</span></label>
+                            <label class="flex items-center"><input type="checkbox" id="enable-auto-replies" checked
+                                    class="mr-2"><span class="text-white text-xs">Auto Response</span></label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div><label class="block text-xs text-gray-400 mb-1">Max Shoutouts</label><input
+                                    type="number" id="max-shoutouts" value="3" min="1" max="10"
+                                    class="w-full bg-gray-600 text-white rounded px-2 py-1"></div>
+                            <div><label class="block text-xs text-gray-400 mb-1">Max Replies</label><input type="number"
+                                    id="max-replies" value="10" min="1" max="50"
+                                    class="w-full bg-gray-600 text-white rounded px-2 py-1"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="dashboard.manageNotifications()"
+                                class="bg-blue-600 hover:bg-blue-700 text-white btn-compact rounded w-full">Auto
+                                Mode</button>
+                            <button onclick="dashboard.triggerAutoReply()"
+                                class="bg-green-600 hover:bg-green-700 text-white btn-compact rounded w-full">Auto-Reply</button>
+                        </div>
+                        <div class="mt-2">
+                            <input type="text" id="shoutout-username" placeholder="@USERNAME"
+                                class="w-full bg-gray-600 text-white rounded px-2 py-1 mb-2">
+                            <button onclick="dashboard.createShoutout && dashboard.createShoutout()"
+                                class="w-full bg-purple-600 hover:bg-purple-700 text-white btn-compact rounded">Shoutout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black/70 items-center justify-center z-50 hidden">
+        <div class="glass-panel rounded-lg p-6 text-center">
+            <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4">
+            </div>
+            <span class="text-white font-bold">Initializing...</span>
+        </div>
+    </div>
+
+    <!-- Task Configuration Modal -->
+    <div id="task-config-modal" class="fixed inset-0 bg-black/70 items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 glass-panel rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">Regenerate Schedule</h3>
+                <button onclick="dashboard.closeTaskConfig()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-6">
+                <p class="text-gray-300 mb-4">This will regenerate all remaining scheduled tasks for today, preserving
+                    completed tasks.</p>
+                <div class="bg-yellow-900 border border-yellow-600 rounded p-3 mb-4">
+                    <p class="text-yellow-200 text-sm"><i class="fas fa-exclamation-triangle mr-2"></i>This action
+                        cannot be undone. All future scheduled tasks will be replaced.</p>
+                </div>
+                <div id="task-selection" class="space-y-2"></div>
+            </div>
+            <div class="flex justify-end gap-4">
+                <button onclick="dashboard.closeTaskConfig()"
+                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">Cancel</button>
+                <button onclick="dashboard.createFreshSchedule()"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm"><i
+                        class="fas fa-magic mr-2"></i>Fresh Start</button>
+                <button onclick="dashboard.regenerateSchedule()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"><i
+                        class="fas fa-sync-alt mr-2"></i>Regenerate Tasks</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification-toast"
+        class="fixed top-4 right-4 max-w-sm w-full bg-gray-800 rounded-lg p-4 transform translate-x-full transition-transform duration-300 ease-out z-50">
+        <div class="flex items-start">
+            <div class="shrink-0"><i id="toast-icon" class="fas fa-info-circle text-blue-500"></i></div>
+            <div class="ml-3 flex-1">
+                <p id="toast-title" class="text-sm font-bold text-white"></p>
+                <p id="toast-message" class="mt-1 text-sm text-gray-400"></p>
+            </div>
+            <button id="close-toast" class="ml-4 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}?v={{ timestamp }}"></script>
+</body>
+
+</html>
