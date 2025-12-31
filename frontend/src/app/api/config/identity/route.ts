@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Setting from '@/models/Setting';
 
 const DEFAULT_IDENTITY = {
     user_id: 'default_tenant',
@@ -39,9 +40,11 @@ export async function GET(request: Request) {
     const userId = searchParams.get('user_id') || 'default_tenant';
 
     try {
-        const data = await redisConnection.get(`identity:${userId}`);
-        if (data) {
-            return NextResponse.json({ identity: JSON.parse(data) });
+        await connectDB();
+        const setting = await Setting.findOne({ key: `identity:${userId}` });
+
+        if (setting && setting.value) {
+            return NextResponse.json({ identity: setting.value });
         } else {
             return NextResponse.json({ identity: DEFAULT_IDENTITY });
         }
@@ -55,7 +58,12 @@ export async function POST(request: Request) {
         const body = await request.json();
         const userId = body.user_id || 'default_tenant';
 
-        await redisConnection.set(`identity:${userId}`, JSON.stringify(body.identity));
+        await connectDB();
+        await Setting.findOneAndUpdate(
+            { key: `identity:${userId}` },
+            { value: body.identity },
+            { upsert: true }
+        );
 
         return NextResponse.json({ success: true });
     } catch (error) {

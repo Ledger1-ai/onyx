@@ -60,11 +60,16 @@ export default function MissionSchedule({ schedule, onDateChange, afterlifeEnabl
                             const typeRaw = slot.activity_type || '';
                             const type = typeRaw.toString().toUpperCase();
 
-                            if (type.includes('LINKEDIN')) platform = 'LINKEDIN';
-                            else if (type.includes('TWEET') || type === 'THREAD' || type.includes('REPLY') || type.includes('SCROLL') || type.includes('SEARCH')) platform = 'TWITTER/X';
-                            else if (type.includes('FACEBOOK')) platform = 'FACEBOOK';
-                            else if (type.includes('INSTAGRAM')) platform = 'INSTAGRAM';
-                            else if (type.includes('CONTENT') || type.includes('RADAR') || type.includes('ANALYTICS') || type.includes('MONITOR') || type.includes('PERFORMANCE') || type.includes('STRATEGY')) platform = 'SYSTEM';
+                            if (slot.platform) {
+                                platform = slot.platform === 'TWITTER' ? 'TWITTER/X' : slot.platform;
+                            } else {
+                                // Fallback Heuristics
+                                if (type.includes('LINKEDIN')) platform = 'LINKEDIN';
+                                else if (type.includes('TWEET') || type === 'THREAD' || type.includes('REPLY') || type.includes('SCROLL') || type.includes('SEARCH')) platform = 'TWITTER/X';
+                                else if (type.includes('FACEBOOK')) platform = 'FACEBOOK';
+                                else if (type.includes('INSTAGRAM')) platform = 'INSTAGRAM';
+                                else if (type.includes('CONTENT') || type.includes('RADAR') || type.includes('ANALYTICS') || type.includes('MONITOR') || type.includes('PERFORMANCE') || type.includes('STRATEGY')) platform = 'SYSTEM';
+                            }
 
                             // Risk Logic (Task Type Analysis)
                             const isTwitter = platform === 'TWITTER/X';
@@ -95,13 +100,30 @@ export default function MissionSchedule({ schedule, onDateChange, afterlifeEnabl
 
                             // CHECK 2: Is the required mode enabled (i.e. Afterlife/Agent Mode for Bot tasks)?
                             const isModeReady = (() => {
-                                if (platform === 'FACEBOOK' || platform === 'INSTAGRAM') return true; // Meta is API (Safe)
-                                if (isRiskyAction) return afterlifeEnabled; // Risky/Bot tasks require Afterlife
-                                if (platform === 'TWITTER/X' && !afterlifeEnabled) {
-                                    const tw = authStatus?.twitter || {};
-                                    if (!tw.api) return false; // Can't post via Bot if Afterlife is off
+                                // SYSTEM
+                                if (platform === 'SYSTEM') return true;
+
+                                // META (Facebook/Instagram)
+                                if (platform === 'FACEBOOK' || platform === 'INSTAGRAM') {
+                                    // Viewing Stories/Reels implies Browser/Bot -> Requires Afterlife
+                                    if (type.includes('VIEW')) return afterlifeEnabled;
+                                    return true; // Posts/Analytics are API -> Safe
                                 }
-                                return true; // Standard allowed
+
+                                // LINKEDIN (Hybrid)
+                                if (platform === 'LINKEDIN') {
+                                    // Posts/Articles -> API -> Safe
+                                    if (type.includes('ARTICLE') || type.includes('CONTENT') || type.includes('POST')) return true;
+                                    // Engage/Connect/Monitor -> Bot -> Requires Afterlife
+                                    return afterlifeEnabled;
+                                }
+
+                                // TWITTER (Bot/Agent Only as per user)
+                                if (platform === 'TWITTER/X') {
+                                    return afterlifeEnabled;
+                                }
+
+                                return true;
                             })();
 
                             // Combined Lock

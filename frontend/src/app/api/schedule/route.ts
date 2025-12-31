@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
-import { redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Setting from '@/models/Setting';
 
 export async function GET() {
     const now = new Date();
 
     try {
-        const cachedSchedule = await redisConnection.get('schedule:daily_plan');
+        await connectDB();
+        const cachedSchedule = await Setting.findOne({ key: 'schedule:daily_plan' });
 
-        if (cachedSchedule) {
-            return NextResponse.json(JSON.parse(cachedSchedule));
+        if (cachedSchedule && cachedSchedule.value) {
+            // If value is a string (legacy JSON), parse it. If object, return as is.
+            const schedule = typeof cachedSchedule.value === 'string'
+                ? JSON.parse(cachedSchedule.value)
+                : cachedSchedule.value;
+            return NextResponse.json(schedule);
         }
 
         // Fallback Mock Data

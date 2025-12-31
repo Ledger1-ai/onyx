@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
-import { redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Setting from '@/models/Setting';
 
 export async function POST(req: Request) {
     try {
+        await connectDB();
         const now = new Date();
 
         // 1. Get Configuration
-        const configJson = await redisConnection.get('task:configuration');
+        const setting = await Setting.findOne({ key: 'task:configuration' });
 
         let enabledTasks: Record<string, any> = {};
 
-        if (configJson) {
-            enabledTasks = JSON.parse(configJson);
+        if (setting && setting.value) {
+            enabledTasks = setting.value;
         } else {
             enabledTasks = {
                 'TWITTER_TWEET_DAILY': true,
@@ -29,12 +31,9 @@ export async function POST(req: Request) {
         if (enabledTasks['TWITTER_TWEET_DAILY']) availableTaskTypes.push({ type: 'TWITTER_TWEET', priority: 1, platform: 'TWITTER', label: 'Tweet Generation' });
         if (enabledTasks['TWITTER_REPLY_MENTIONS']) availableTaskTypes.push({ type: 'TWITTER_REPLY', priority: 2, platform: 'TWITTER', label: 'Reply to Mentions' });
         if (enabledTasks['TWITTER_MONITOR_TRENDS']) availableTaskTypes.push({ type: 'TWITTER_TRENDS', priority: 3, platform: 'TWITTER', label: 'Trend Monitoring' });
-        if (enabledTasks['TWITTER_FOLLOW_USER']) availableTaskTypes.push({ type: 'TWITTER_FOLLOW', priority: 3, platform: 'TWITTER', label: 'Follow User' });
+        if (enabledTasks['TWITTER_FOLLOW_TARGETS']) availableTaskTypes.push({ type: 'TWITTER_FOLLOW', priority: 3, platform: 'TWITTER', label: 'Follow User' });
 
         // LinkedIn
-        // Frontend saves keys like 'linkedin_post', 'linkedin_connect' with values 0-100.
-        // We check if value > 0 (or truthy) to determine if we should generate these tasks.
-
         if (enabledTasks['linkedin_post'] > 0) availableTaskTypes.push({ type: 'LINKEDIN_ARTICLE', priority: 2, platform: 'LINKEDIN', label: 'LinkedIn Article' });
         if (enabledTasks['linkedin_thread'] > 0) availableTaskTypes.push({ type: 'LINKEDIN_ARTICLE', priority: 2, platform: 'LINKEDIN', label: 'LinkedIn Content' });
 
@@ -48,7 +47,6 @@ export async function POST(req: Request) {
         if (enabledTasks['linkedin_analytics'] > 0) availableTaskTypes.push({ type: 'LINKEDIN_ANALYTICS', priority: 4, platform: 'LINKEDIN', label: 'Fetch Analytics' });
 
         // Meta (API)
-        // Note: Using flat toggle (true/false) from boolean config, but supporting numeric just in case
         if (enabledTasks['meta_facebook_post']) availableTaskTypes.push({ type: 'meta:facebook-post', priority: 2, platform: 'FACEBOOK', label: 'FB Page Post' });
         if (enabledTasks['meta_instagram_post']) availableTaskTypes.push({ type: 'meta:instagram-post', priority: 2, platform: 'INSTAGRAM', label: 'IG Feed Post' });
         if (enabledTasks['meta_engage']) availableTaskTypes.push({ type: 'meta:respond', priority: 3, platform: 'FACEBOOK', label: 'Meta Engagement' });
@@ -63,7 +61,7 @@ export async function POST(req: Request) {
             availableTaskTypes.push({ type: 'meta:view-reels', priority: 3, platform: 'INSTAGRAM', label: 'Watch IG Reels', data: { platform: 'instagram' } } as any);
         }
 
-        // System / Housekeeping (Always good to have some)
+        // System / Housekeeping
         if (enabledTasks['SYSTEM_HEALTH_CHECK']) availableTaskTypes.push({ type: 'SYSTEM_CHECK', priority: 1, platform: 'SYSTEM', label: 'System Health Check' });
 
         // If nothing enabled, default to Idle
@@ -96,6 +94,7 @@ export async function POST(req: Request) {
             slots.push({
                 slot_id: `slot_${Date.now()}_${slots.length}`,
                 activity_type: task.type,
+                platform: task.platform, // Save explicit platform
                 start_time: currentSlot.toISOString(),
                 end_time: addMinutes(currentSlot, 15).toISOString(), // 15 minute duration
                 status: 'pending',
@@ -111,8 +110,12 @@ export async function POST(req: Request) {
             slots: slots
         };
 
-        // 4. Save to Redis
-        await redisConnection.set('schedule:daily_plan', JSON.stringify(newSchedule));
+        // 4. Save to MongoDB
+        await Setting.findOneAndUpdate(
+            { key: 'schedule:daily_plan' },
+            { value: newSchedule },
+            { upsert: true }
+        );
 
         return NextResponse.json({
             success: true,

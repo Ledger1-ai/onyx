@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Setting from '@/models/Setting';
 
-const REDIS_KEY = 'task:configuration';
+const KEY = 'task:configuration';
 
 export async function POST(req: Request) {
     try {
@@ -14,8 +15,10 @@ export async function POST(req: Request) {
             );
         }
 
+        await connectDB();
+
         // Get current state
-        const currentData = await redisConnection.get(REDIS_KEY);
+        const setting = await Setting.findOne({ key: KEY });
 
         // Default Task Definitions (Must match configuration/route.ts)
         const DEFAULT_TASKS = [
@@ -55,36 +58,35 @@ export async function POST(req: Request) {
         const fullState: Record<string, boolean> = {};
         DEFAULT_TASKS.forEach(t => fullState[t.id] = t.enabled);
 
-        if (currentData) {
-            const redisState = JSON.parse(currentData);
-            Object.assign(fullState, redisState);
+        if (setting && setting.value) {
+            Object.assign(fullState, setting.value);
         }
 
         // 2. Toggle
-        // For new items not in legacy redis, we rely on the default merged above
-        // We still check if the key exists in our 'known universe' to prevent garbage
         const knownIds = new Set(DEFAULT_TASKS.map(t => t.id));
 
-        // Optional: allow unknown IDs (dynamic)? For now, strict is safer.
         if (!knownIds.has(taskId)) {
-            // console.warn(`Toggling unknown task ID: ${taskId}`); 
-            // We can allow it to support future dynamic keys without redeploy
+            // Optional warning
         }
 
         fullState[taskId] = !fullState[taskId];
 
-        // 3. Save
-        await redisConnection.set(REDIS_KEY, JSON.stringify(fullState));
+        // 3. Save to MongoDB
+        await Setting.findOneAndUpdate(
+            { key: KEY },
+            { value: fullState },
+            { upsert: true }
+        );
 
         return NextResponse.json({
             success: true,
             enabled: fullState[taskId]
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error toggling task:', error);
         return NextResponse.json(
-            { success: false, error: 'Internal Server Error' },
+            { success: false, error: `Internal Server Error: ${error.message} (Stack: ${error.stack})` },
             { status: 500 }
         );
     }

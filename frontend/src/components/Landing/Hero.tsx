@@ -6,7 +6,7 @@ import { Sparkles, Bot, Zap } from 'lucide-react';
 
 export default function Hero() {
     return (
-        <section className="relative min-h-[90vh] flex items-center justify-center pt-20 overflow-hidden">
+        <section className="relative min-h-[90vh] flex items-center justify-center pt-30 overflow-hidden">
             {/* Background Effects */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-cyan-900/20 via-black to-black" />
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
@@ -25,12 +25,12 @@ export default function Hero() {
                 </h1>
 
                 <p className="text-xl md:text-2xl font-rajdhani text-gray-400 mb-10 max-w-3xl mx-auto leading-relaxed">
-                    Unleash the power of Anubis. An autonomous social intelligence platform designed to scale your digital presence through advanced algorithmic strategies.
+                    Unleash the power of BasaltOnyx. An autonomous social intelligence platform designed to scale your digital presence through advanced algorithmic strategies.
                 </p>
 
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6">
                     <Link
-                        href="/login"
+                        href="/underworld/gateway"
                         className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-black font-orbitron font-bold rounded-lg shadow-[0_0_30px_rgba(6,182,212,0.4)] hover:shadow-[0_0_50px_rgba(6,182,212,0.6)] transition-all transform hover:-translate-y-1"
                     >
                         DEPLOY AGENTS

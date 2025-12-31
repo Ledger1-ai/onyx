@@ -1,0 +1,38 @@
+name: Azure Web App - Onyx Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies, build, and test
+        run: |
+          cd frontend
+          npm install
+          npm run build --if-present
+        # note: omitting 'npm run test' for now
+
+      - name: Zip artifact for deployment
+        run: |
+          cd frontend
+          zip -r ../deployment.zip . -x "node_modules/*" ".next/cache/*"
+
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'YOUR_APP_NAME_HERE' # Replace with your app name
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deployment.zip

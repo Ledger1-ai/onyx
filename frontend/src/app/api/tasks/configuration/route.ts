@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Setting from '@/models/Setting';
 
 const DEFAULT_TASKS = [
     // Twitter - Core
@@ -41,13 +42,14 @@ const DEFAULT_TASKS = [
 
 export async function GET() {
     try {
-        // Fetch enabled states from Redis
-        const existingConfig = await redisConnection.get('task:configuration');
+        await connectDB();
+        // Fetch enabled states from MongoDB
+        const setting = await Setting.findOne({ key: 'task:configuration' });
 
         let finalTasks = DEFAULT_TASKS;
 
-        if (existingConfig) {
-            const configMap = JSON.parse(existingConfig);
+        if (setting && setting.value) {
+            const configMap = setting.value;
             // innovative merge: use defaults for definition, but override enabled status from DB
             finalTasks = DEFAULT_TASKS.map(task => ({
                 ...task,

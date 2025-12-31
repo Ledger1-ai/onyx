@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Setting from '@/models/Setting';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,20 +37,26 @@ export async function GET(req: Request) {
         const exchangeRes = await fetch(`https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${META_APP_ID}&client_secret=${META_APP_SECRET}&fb_exchange_token=${shortToken}`);
         const exchangeData = await exchangeRes.json();
 
-        const longToken = exchangeData.access_token || shortToken; // Fallback if exchange fails
+        const longToken = exchangeData.access_token || shortToken;
 
         // 3. Get User Details
         const meRes = await fetch(`https://graph.facebook.com/me?access_token=${longToken}`);
         const meData = await meRes.json();
 
-        // 4. Save to Redis
-        // Storing in a hash for easy access by worker
-        await redisConnection.hset('auth:meta', {
-            access_token: longToken,
-            user_id: meData.id,
-            name: meData.name,
-            updated_at: new Date().toISOString()
-        });
+        // 4. Save to MongoDB
+        await connectDB();
+        await Setting.findOneAndUpdate(
+            { key: 'auth:meta' },
+            {
+                value: {
+                    access_token: longToken,
+                    user_id: meData.id,
+                    name: meData.name,
+                    updated_at: new Date().toISOString()
+                }
+            },
+            { upsert: true, new: true }
+        );
 
         // Also update legacy format if needed, but 'task:configuration' drives generation.
         // We might want to set a flag that 'meta' is active.

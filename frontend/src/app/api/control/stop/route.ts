@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
-import { redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Setting from '@/models/Setting';
 
 export async function POST() {
     try {
+        await connectDB();
         // Disable the Scheduler
-        await redisConnection.set('dispatcher:active', 'false');
+        await Setting.findOneAndUpdate(
+            { key: 'dispatcher:active' },
+            { value: 'false' },
+            { upsert: true }
+        );
 
         return NextResponse.json({
             success: true,

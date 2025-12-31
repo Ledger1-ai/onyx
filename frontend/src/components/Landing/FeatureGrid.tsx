@@ -51,7 +51,7 @@ export default function FeatureGrid() {
                         SYSTEM <span className="text-cyan-500">CAPABILITIES</span>
                     </h2>
                     <p className="text-gray-400 font-rajdhani text-xl max-w-2xl mx-auto">
-                        Explore the core modules that power the Anubis autonomous ecosystem.
+                        Explore the core modules that power the BasaltOnyx autonomous ecosystem.
                     </p>
                 </div>
 

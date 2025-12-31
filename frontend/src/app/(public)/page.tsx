@@ -22,7 +22,7 @@ export default function LandingPage() {
                             Join the elite automation network. Access granted to authorized personnel only.
                         </p>
                         <a
-                            href="/login"
+                            href="/underworld/gateway"
                             className="inline-block px-12 py-4 bg-white text-black hover:bg-cyan-400 font-orbitron font-bold text-lg rounded-full shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_rgba(6,182,212,0.5)] transition-all transform hover:scale-105"
                         >
                             INITIALIZE SYSTEM
@@ -33,10 +33,12 @@ export default function LandingPage() {
                 {/* Footer */}
                 <footer className="py-12 border-t border-white/10 bg-black/80">
                     <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center opacity-60">
-                        <div className="mb-4 md:mb-0">
-                            <span className="font-orbitron font-bold text-lg">LEDGER1.AI</span>
-                            <span className="mx-2">|</span>
-                            <span className="font-rajdhani">ANUBIS PROTOCOL v2.0</span>
+                        <div className="mb-4 md:mb-0 flex items-center gap-1">
+                            <span className="font-orbitron font-bold text-lg flex items-center">
+                                <img src="/BasaltOnyxWideD.png" alt="BasaltOnyx" width={150} height={36} className="object-contain" />
+                            </span>
+                            <span className="mx-2">//</span>
+                            <span className="font-rajdhani tracking-wider pt-1">PROJECT ANUBIS v2.0</span>
                         </div>
                         <div className="flex gap-6 font-rajdhani text-sm">
                             <a href="#" className="hover:text-cyan-400 transition-colors">PRIVACY_POLICY</a>

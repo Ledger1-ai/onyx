@@ -16,7 +16,7 @@ const rajdhani = Rajdhani({
 });
 
 export const metadata: Metadata = {
-  title: "ANUBIS - AI Agent Dashboard",
+  title: "BasaltOnyx - AI Agent Dashboard",
   description: "Autonomous Social Intelligence Platform",
 };
 

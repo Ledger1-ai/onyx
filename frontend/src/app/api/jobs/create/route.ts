@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { taskQueue } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Job from '@/models/Job';
 
 export async function POST(req: Request) {
     try {
@@ -13,16 +14,20 @@ export async function POST(req: Request) {
             );
         }
 
-        // Add job to the queue
-        const job = await taskQueue.add(type, payload || {}, {
-            // Priority handling could go here
-            priority: body.priority || 0,
+        await connectDB();
+
+        // Add job to MongoDB
+        const job = await Job.create({
+            type: type,
+            data: payload || {},
+            status: 'pending',
+            priority: body.priority || 0
         });
 
         return NextResponse.json(
             {
                 success: true,
-                jobId: job.id,
+                jobId: job._id,
                 message: 'Job accepted'
             },
             { status: 202 }

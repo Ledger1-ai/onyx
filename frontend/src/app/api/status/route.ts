@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import mongoose from 'mongoose';
+import Setting from '@/models/Setting';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,23 +11,26 @@ export async function GET() {
     let activeMode = 'standard';
 
     try {
-        // Check Redis
-        const pong = await redisConnection.ping();
-        if (pong === 'PONG') {
+        // Check MongoDB Connection
+        await connectDB();
+        if (mongoose.connection.readyState === 1) {
             dbStatus = true;
 
-            // Check Worker Heartbeat
-            const lastHeartbeat = await redisConnection.get('worker:heartbeat');
-            if (lastHeartbeat) {
-                const diff = Date.now() - parseInt(lastHeartbeat);
-                if (diff < 30000) {
+            // Check Worker Heartbeat via Settings
+            // Worker should update this key periodically
+            const heartbeatSetting = await Setting.findOne({ key: 'worker:heartbeat' });
+            if (heartbeatSetting && heartbeatSetting.value) {
+                const lastHeartbeat = parseInt(heartbeatSetting.value);
+                const diff = Date.now() - lastHeartbeat;
+                // Allow up to 2 minutes delay for polling
+                if (diff < 120000) {
                     workerStatus = true;
                 }
             }
 
             // Check Afterlife Mode
-            const afterlifeEnabled = await redisConnection.get('afterlife:mode');
-            if (afterlifeEnabled === 'true') {
+            const afterlifeSetting = await Setting.findOne({ key: 'afterlife:mode' });
+            if (afterlifeSetting && afterlifeSetting.value === true) {
                 activeMode = 'afterlife';
             }
         }

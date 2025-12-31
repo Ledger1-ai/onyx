@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
-import { redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Setting from '@/models/Setting';
 
 export async function POST(req: Request) {
     try {
+        await connectDB();
         // Hard Reset
-        await redisConnection.del('task:configuration');
-        await redisConnection.del('schedule:daily_plan');
+        await Setting.deleteOne({ key: 'task:configuration' });
+        await Setting.deleteOne({ key: 'schedule:daily_plan' });
 
         return NextResponse.json({
             success: true,

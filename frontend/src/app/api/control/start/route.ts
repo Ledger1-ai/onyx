@@ -1,20 +1,31 @@
 import { NextResponse } from 'next/server';
-import { taskQueue, redisConnection } from '@/lib/queue';
+import { connectDB } from '@/lib/db';
+import Setting from '@/models/Setting';
+import Job from '@/models/Job';
 
 export async function POST() {
     try {
+        await connectDB();
         // Enable the Scheduler
-        await redisConnection.set('dispatcher:active', 'true');
+        await Setting.findOneAndUpdate(
+            { key: 'dispatcher:active' },
+            { value: 'true' }, // Keeping as string 'true' to match previous logic logic if needed, or boolean true
+            { upsert: true }
+        );
 
-        const job = await taskQueue.add('start-agent', {
-            timestamp: new Date().toISOString(),
-            triggeredBy: 'user'
+        const job = await Job.create({
+            type: 'start-agent',
+            data: {
+                timestamp: new Date().toISOString(),
+                triggeredBy: 'user'
+            },
+            status: 'pending'
         });
 
         return NextResponse.json({
             success: true,
             message: 'Agent start command queued',
-            jobId: job.id
+            jobId: job._id
         });
     } catch (error) {
         return NextResponse.json({ error: 'Failed to queue start command' }, { status: 500 });
