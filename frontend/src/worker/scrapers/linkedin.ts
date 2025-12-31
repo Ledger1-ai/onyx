@@ -8,15 +8,7 @@ import fs from 'fs';
 // @ts-ignore - stealth plugin types issue
 playwrightExtra.use(stealthPlugin());
 
-import { IJobAdapter } from '../types/IJobAdapter';
-import { chromium as playwrightExtra } from 'playwright-extra';
-import stealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { logger } from '../utils/logger';
-import path from 'path';
-import fs from 'fs';
 
-// @ts-ignore - stealth plugin types issue
-playwrightExtra.use(stealthPlugin());
 
 /**
  * Launch a persistent browser context to maintain login sessions.
