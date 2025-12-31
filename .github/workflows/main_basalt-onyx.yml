@@ -23,17 +23,19 @@ jobs:
         with:
           node-version: "24.x"
           cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Next.js cache
         uses: actions/cache@v4
         with:
           path: |
-            ${{ github.workspace }}/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+            ${{ github.workspace }}/frontend/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-${{ hashFiles('frontend/**.[jt]s', 'frontend/**.[jt]sx') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-
 
       - name: npm install, build, and test
+        working-directory: frontend
         env:
           BUILD_STANDALONE: "true"
         run: |
@@ -42,6 +44,7 @@ jobs:
           npm run test --if-present
 
       - name: Prepare Standalone Build
+        working-directory: frontend
         run: |
           cp -r public .next/standalone/public
           mkdir -p .next/standalone/.next
@@ -56,7 +59,7 @@ jobs:
 
           # Zip the standalone directory to preserve all files including hidden ones
           cd .next/standalone
-          zip -r ../../release.zip .
+          zip -r ../../../release.zip .
           cd ../..
 
       - name: Upload artifact for deployment job
