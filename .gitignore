@@ -10,3 +10,5 @@ image_archive/
 # Ignore image_archive
 image_archive/
 
+config.json
+config.env
